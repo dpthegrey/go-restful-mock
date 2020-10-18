@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Author struct {
@@ -13,6 +15,36 @@ type Author struct {
 	Lastname  string `json:"lastname,omitempty"`
 	Username  string `json:"username,omitempty"`
 	Password  string `json:"password,omitempty"`
+}
+
+func RegisterEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+	var author Author
+	json.NewDecoder(request.Body).Decode(&author)
+	hash, _ := bcrypt.GenerateFromPassword([]byte(author.Password), 10)
+	author.Id = uuid.Must(uuid.NewV4()).String()
+	author.Password = string(hash)
+	authors = append(authors, author)
+	json.NewEncoder(response).Encode(authors)
+}
+
+func LoginEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+	var data Author
+	json.NewDecoder(request.Body).Decode(&data)
+	for _, author := range authors {
+		if author.Username == data.Username {
+			err := bcrypt.CompareHashAndPassword([]byte(author.Password), []byte(data.Password))
+			if err != nil {
+				response.WriteHeader(500)
+				response.Write([]byte(`{ "message": "invalid password" }`))
+				return
+			}
+			json.NewEncoder(response).Encode(author)
+			return
+		}
+	}
+	response.Write([]byte(`{ "message": "invalid username" }`))
 }
 
 func AuthorRetrieveAllEndpoint(response http.ResponseWriter, request *http.Request) {
@@ -62,7 +94,8 @@ func AuthorUpdateEndpoint(response http.ResponseWriter, request *http.Request) {
 				author.Username = changes.Username
 			}
 			if changes.Password != "" {
-				author.Password = changes.Password
+				hash, _ := bcrypt.GenerateFromPassword([]byte(changes.Password), 10)
+				author.Password = string(hash)
 			}
 			authors[index] = author
 			json.NewEncoder(response).Encode(authors)

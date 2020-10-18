@@ -42,6 +42,8 @@ func main() {
 	fmt.Println("Starting the application...")
 	router := mux.NewRouter()
 	router.HandleFunc("/", RootEndpoint).Methods("GET")
+	router.HandleFunc("/register", RegisterEndpoint).Methods("POST")
+	router.HandleFunc("/login", AuthorRetrieveAllEndpoint).Methods("POST")
 	router.HandleFunc("/authors", AuthorRetrieveAllEndpoint).Methods("GET")
 	router.HandleFunc("/author/{id}", AuthorRetrieveEndpoint).Methods("GET")
 	router.HandleFunc("/author/{id}", AuthorDeleteEndpoint).Methods("DELETE")
