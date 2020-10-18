@@ -42,5 +42,18 @@ func main() {
 	fmt.Println("Starting the application...")
 	router := mux.NewRouter()
 	router.HandleFunc("/", RootEndpoint).Methods("GET")
+	router.HandleFunc("/register", RegisterEndpoint).Methods("POST")
+	router.HandleFunc("/login", AuthorRetrieveAllEndpoint).Methods("POST")
+	router.HandleFunc("/authors", AuthorRetrieveAllEndpoint).Methods("GET")
+	router.HandleFunc("/author/{id}", AuthorRetrieveEndpoint).Methods("GET")
+	router.HandleFunc("/author/{id}", AuthorDeleteEndpoint).Methods("DELETE")
+	router.HandleFunc("/author/{id}", AuthorUpdateEndpoint).Methods("PUT")
+	router.HandleFunc("/articles", RootEndpoint).Methods("GET")
+	router.HandleFunc("/authors", ArticleRetrieveAllEndpoint).Methods("GET")
+	router.HandleFunc("/article/{id}", ArticleRetrieveEndpoint).Methods("GET")
+	router.HandleFunc("/article/{id}", ArticleDeleteEndpoint).Methods("DELETE")
+	router.HandleFunc("/article/{id}", ArticleUpdateEndpoint).Methods("PUT")
+	router.HandleFunc("/article", ArticleCreateEndpoint).Methods("POST")
+
 	http.ListenAndServe(":12345", router)
 }
