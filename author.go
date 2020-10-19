@@ -68,7 +68,7 @@ func AuthorDeleteEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	params = mux.Vars(request)
 	for index, author := range authors {
-		if author.id == params["id"] {
+		if author.Id == params["id"] {
 			authors = append(authors[:index], authors[index+1:]...)
 			json.NewEncoder(response).Encode(authors)
 			return
