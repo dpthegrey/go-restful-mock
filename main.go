@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/handlers"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -110,6 +112,25 @@ func main() {
 	router.HandleFunc("/article/{id}", ValidateMiddleware(ArticleDeleteEndpoint)).Methods("DELETE")
 	router.HandleFunc("/article/{id}", ValidateMiddleware(ArticleUpdateEndpoint)).Methods("PUT")
 	router.HandleFunc("/article", ValidateMiddleware(ArticleCreateEndpoint)).Methods("POST")
-
-	http.ListenAndServe(":12345", router)
+	methods := handlers.AllowedMethods(
+		[]string{
+			"GET",
+			"POST",
+			"PUT",
+			"DELETE",
+		},
+	)
+	headers := handlers.AllowedHeaders(
+		[]string{
+			"Content-Type",
+			"Authorization",
+			"X-Requested-With",
+		},
+	)
+	origins := handlers.AllowedOrigins(
+		[]string{
+			"*",
+		},
+	)
+	http.ListenAndServe(":12345", handlers.CORS(headers, methods, origins)(router))
 }
