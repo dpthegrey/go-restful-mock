@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/mapstructure"
 )
@@ -62,6 +64,31 @@ func ValidateJWT(t string) (interface{}, error) {
 	}
 }
 
+func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		authorizationHeader := request.Header.Get("authorization")
+		if authorizationHeader != "" {
+			bearerToken := strings.Split(authorizationHeader, " ")
+			if len(bearerToken) == 2 {
+				decoded, err := ValidateJWT(bearerToken[1])
+				if err != nil {
+					response.Header().Add("content-type", "application/json")
+					response.WriteHeader(500)
+					response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+					return
+				}
+				context.Set(request, "decoded", decoded)
+				next(response, request)
+			}
+		} else {
+			response.Header().Add("content-type", "application/json")
+			response.WriteHeader(500)
+			response.Write([]byte(`{ "message": "auth header is required" }`))
+			return
+		}
+	})
+}
+
 func RootEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	response.Write([]byte(`{ "Message": "Hello World" }`))
@@ -80,9 +107,9 @@ func main() {
 	router.HandleFunc("/articles", RootEndpoint).Methods("GET")
 	router.HandleFunc("/authors", ArticleRetrieveAllEndpoint).Methods("GET")
 	router.HandleFunc("/article/{id}", ArticleRetrieveEndpoint).Methods("GET")
-	router.HandleFunc("/article/{id}", ArticleDeleteEndpoint).Methods("DELETE")
-	router.HandleFunc("/article/{id}", ArticleUpdateEndpoint).Methods("PUT")
-	router.HandleFunc("/article", ArticleCreateEndpoint).Methods("POST")
+	router.HandleFunc("/article/{id}", ValidateMiddleware(ArticleDeleteEndpoint)).Methods("DELETE")
+	router.HandleFunc("/article/{id}", ValidateMiddleware(ArticleUpdateEndpoint)).Methods("PUT")
+	router.HandleFunc("/article", ValidateMiddleware(ArticleCreateEndpoint)).Methods("POST")
 
 	http.ListenAndServe(":12345", router)
 }
