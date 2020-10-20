@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
@@ -55,7 +58,17 @@ func LoginEndpoint(response http.ResponseWriter, request *http.Request) {
 				response.Write([]byte(`{ "message": "invalid password" }`))
 				return
 			}
-			json.NewEncoder(response).Encode(author)
+			claims := CustomJWTClaim{
+				Id: author.Id,
+				StandardClaims: jwt.StandardClaims{
+					ExpiresAt: time.Now().Local().Add(time.Hour).Unix(),
+					Issuer:    "dp",
+				},
+			}
+			token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+			tokenString, _ := token.SignedString(JWT_SECRET)
+			response.Write([]byte(`{ "tokem": "` + tokenString + `" }`))
+			// json.NewEncoder(response).Encode(author)
 			return
 		}
 	}
