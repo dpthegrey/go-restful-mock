@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -47,7 +47,7 @@ func ArticleCreateEndpoint(response http.ResponseWriter, request *http.Request) 
 		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
 		return
 	}
-	article.Id = uuid.Must(uuid.NewV4()).String()
+	article.Id = uuid.Must(uuid.NewRandom()).String()
 	article.Author = token.Id
 	articles = append(articles, article)
 	json.NewEncoder(response).Encode(articles)
